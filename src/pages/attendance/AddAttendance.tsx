@@ -1,21 +1,17 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ExcelJS from "exceljs";
 import {
   Upload,
   FileDown,
   AlertCircle,
   CheckCircle2,
-  Search,
   ArrowLeft,
   X,
   FileSpreadsheet
 } from "lucide-react";
 import { BASE_URL } from "../../api/endpoints";
 import { Button } from "../../components/Button";
-import { Input } from "../../components/Input";
 import { cn } from "../../utils/cn";
 
 export default function AddAttendance() {
@@ -23,111 +19,50 @@ export default function AddAttendance() {
   const token = localStorage.getItem("admin_token");
 
   const [file, setFile] = useState<File | null>(null);
-  const [rows, setRows] = useState<any[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [year, setYear] = useState("E1");
-  const [sem, setSem] = useState("Sem - 1");
-  const [branch, setBranch] = useState("CSE");
-  const [processId, setProcessId] = useState<string | null>(null);
-  const [progress, setProgress] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [success, setSuccess] = useState<any>(null);
 
-  useEffect(() => {
-    if (!processId) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/admin/progress?processId=${processId}`, {
-          headers: { Authorization: `Bearer ${JSON.parse(token!)}` },
-        });
-        const data = await res.json();
-        if (data.success) {
-          setProgress(data);
-          if (["completed", "failed"].includes(data.status)) clearInterval(interval);
-        } else clearInterval(interval);
-      } catch {
-        clearInterval(interval);
-      }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [processId]);
-
-  const handleFile = async (f: File) => {
-    try {
-      setFile(f);
-      setError(null);
-      const buffer = await f.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
-      const worksheet = workbook.getWorksheet(1);
-
-      const json: any[] = [];
-      const headerRow = worksheet?.getRow(1);
-      const headers_found: string[] = [];
-      
-      headerRow?.eachCell((cell, colNumber) => {
-        headers_found[colNumber] = cell.text;
-      });
-
-      worksheet?.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return;
-        const rowData: any = {};
-        row.eachCell((cell, colNumber) => {
-          const header = headers_found[colNumber];
-          if (header) rowData[header] = cell.text;
-        });
-        if (Object.keys(rowData).length > 0) json.push(rowData);
-      });
-
-      if (!json.length) throw new Error("Empty file or invalid format");
-      setHeaders(headers_found.filter(Boolean));
-      setRows(json.map((r, i) => ({ id: i + 1, ...r })));
-    } catch (err: any) {
-      setError(err.message);
-      setFile(null);
-      setRows([]);
-    }
+  const handleFile = (f: File) => {
+    setFile(f);
+    setError(null);
+    setSuccess(null);
   };
 
   const clearFile = () => {
     setFile(null);
-    setRows([]);
-    setHeaders([]);
     setError(null);
-  };
-
-  const buildPayload = () => {
-    const studentsMap: Record<string, { Username: string; Attendance: any[] }> = {};
-    rows.forEach((r) => {
-      if (!r.Username) return;
-      if (!studentsMap[r.Username])
-        studentsMap[r.Username] = { Username: r.Username, Attendance: [] };
-      studentsMap[r.Username].Attendance.push({
-        SubjectName: r.SubjectName,
-        ClassesHappened: Number(r.ClassesHappened) || 0,
-        ClassesAttended: Number(r.ClassesAttended) || 0,
-      });
-    });
-    return { year, SemesterName: sem, branch, Students: Object.values(studentsMap) };
+    setSuccess(null);
   };
 
   const handleUpload = async () => {
-    if (!rows.length) return setError("Select a valid file first");
+    if (!file) return setError("Select a valid file first");
     setUploading(true);
     setError(null);
+    setSuccess(null);
+    
     try {
-      const res = await fetch(`${BASE_URL}/admin/addattendance`, {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${BASE_URL}/academics/attendance/upload`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${JSON.parse(token!)}`,
         },
-        body: JSON.stringify(buildPayload()),
+        body: formData,
       });
       const data = await res.json();
-      if (data.success) setProcessId(data.processId);
-      else setError(data.msg);
+      
+      if (data.success) {
+        setSuccess(data);
+        // setFile(null); // Keep file visible or clear? Let's keep it until they leave or clear.
+      } else {
+        setError(data.message || "Upload failed");
+         if (data.errors && data.errors.length > 0) {
+             setError(data.errors.join(", "));
+         }
+      }
     } catch {
       setError("Upload failed");
     } finally {
@@ -137,20 +72,17 @@ export default function AddAttendance() {
 
   const downloadTemplate = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/admin/attendance/template`, {
-        method: "POST",
+      const res = await fetch(`${BASE_URL}/academics/attendance/template`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${JSON.parse(token!)}`,
         },
-        body: JSON.stringify({ year, semester: sem, branch }),
       });
        if (!res.ok) throw new Error("Download failed");
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${year}_${sem}_${branch}_attendance_template.xlsx`;
+      a.download = `Attendance_Template.xlsx`;
       a.click();
       a.remove();
     } catch {
@@ -158,15 +90,8 @@ export default function AddAttendance() {
     }
   };
 
-  const filteredRows = useMemo(() => {
-    if (!search.trim()) return rows;
-    return rows.filter((r) =>
-      Object.values(r).join(" ").toLowerCase().includes(search.toLowerCase())
-    );
-  }, [rows, search]);
-
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
       {/* Header */}
          <div className="flex flex-col gap-6">
             <button
@@ -178,8 +103,8 @@ export default function AddAttendance() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Wait, Add Attendance?</h1>
-                    <p className="text-slate-500 mt-1">Bulk upload attendance records.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Upload Attendance</h1>
+                    <p className="text-slate-500 mt-1">Bulk upload attendance records via Excel.</p>
                 </div>
                  <div className="flex gap-3">
                      <Button variant="secondary" onClick={downloadTemplate} size="sm">
@@ -189,55 +114,8 @@ export default function AddAttendance() {
             </div>
         </div>
 
-        {/* Configuration */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Year</label>
-                  <div className="flex bg-slate-100 p-1 rounded-lg">
-                      {["E1", "E2", "E3", "E4"].map((y) => (
-                        <button
-                          key={y}
-                          onClick={() => setYear(y)}
-                          className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                            year === y
-                              ? "bg-white text-slate-900 shadow-sm"
-                              : "text-slate-500 hover:text-slate-700"
-                          }`}
-                        >
-                          {y}
-                        </button>
-                      ))}
-                  </div>
-            </div>
-
-            <div className="space-y-2">
-                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Semester</label>
-                 <select
-                  value={sem}
-                  onChange={(e) => setSem(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
-                  >
-                  <option value="Sem - 1">Semester 1</option>
-                  <option value="Sem - 2">Semester 2</option>
-                  </select>
-            </div>
-
-            <div className="space-y-2">
-                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Branch</label>
-                 <select
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
-                  >
-                  {["CSE", "ECE", "EEE", "CIVIL", "MECH"].map((b) => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                  </select>
-            </div>
-        </div>
-
         {/* Upload Area */}
-        {!rows.length ? (
+        {!file ? (
             <div className={cn(
                 "border-2 border-dashed rounded-xl p-12 text-center transition-all duration-200",
                 error ? 'border-red-300 bg-red-50' : 'border-slate-300 hover:border-blue-500 hover:bg-slate-50'
@@ -257,7 +135,7 @@ export default function AddAttendance() {
                         <Upload className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-lg font-semibold text-slate-900">Click to upload attendance sheet</p>
+                        <p className="text-lg font-semibold text-slate-900">Click to upload excel sheet</p>
                         <p className="text-slate-500 text-sm mt-1">Supports .xlsx, .xls, .csv</p>
                     </div>
                 </label>
@@ -273,7 +151,7 @@ export default function AddAttendance() {
                         </div>
                         <div>
                             <p className="font-semibold">{file?.name}</p>
-                            <p className="text-xs text-slate-400">{rows.length} records loaded</p>
+                            <p className="text-xs text-slate-400">Ready to upload</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -287,97 +165,44 @@ export default function AddAttendance() {
                     </div>
                </div>
 
-                {/* Table Preview */}
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                    <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                         <h3 className="font-semibold text-slate-900">Review Data</h3>
-                         <div className="w-full sm:w-72">
-                             <Input 
-                                placeholder="Search rows..." 
-                                value={search}
-                                onchangeFunction={(e: any) => setSearch(e.target.value)}
-                                icon={<Search className="w-4 h-4" />}
-                             />
-                         </div>
-                    </div>
-                    <div className="overflow-x-auto max-h-[500px]">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 w-full">
-                                <tr>
-                                    {headers.map((h, i) => (
-                                        <th key={i} className="px-6 py-3 font-semibold border-b border-slate-200 min-w-[150px]">{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {filteredRows.map((r) => (
-                                    <tr key={r.id} className="bg-white hover:bg-slate-50 transition-colors">
-                                        {headers.map((h, i) => (
-                                            <td key={i} className="px-6 py-3 whitespace-nowrap text-slate-700">
-                                                 <input
-                                                    value={r[h] || ""}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        setRows((prev) => prev.map((row) => row.id === r.id ? { ...row, [h]: val } : row));
-                                                    }}
-                                                    className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
-                                                />
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                         <Button 
-                            onClick={handleUpload} 
-                            isLoading={uploading}
-                            disabled={uploading}
-                            className="bg-blue-600 hover:bg-blue-700"
-                        >
-                            <Upload className="w-4 h-4 mr-2" /> Process Attendance
-                         </Button>
-                    </div>
-                </div>
-          </div>
-      )}
-
-      {/* Progress & Errors */}
-      {progress && (
-          <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-right-10 duration-500 w-96">
-              <div className="bg-white rounded-xl shadow-2xl p-6 border border-slate-100 flex flex-col gap-4">
-                <div className="flex justify-between items-center">
-                    <div>
-                         <span className="font-bold text-slate-900 block">Processing Upload</span>
-                         <span className={cn("text-xs font-semibold uppercase", 
-                            progress.status === 'completed' ? 'text-green-600' : 
-                            progress.status === 'failed' ? 'text-red-600' : 'text-blue-600'
-                         )}>
-                            {progress.status}
-                         </span>
-                    </div>
-                    <span className="text-sm font-bold text-slate-500">{progress.percentage}%</span>
+                <div className="flex justify-end">
+                     <Button 
+                        onClick={handleUpload} 
+                        isLoading={uploading}
+                        disabled={uploading}
+                        className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto"
+                    >
+                        <Upload className="w-4 h-4 mr-2" /> Process File
+                     </Button>
                 </div>
                 
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div 
-                        className={cn("h-full rounded-full transition-all duration-500", 
-                            progress.status === 'completed' ? 'bg-green-500' : 
-                            progress.status === 'failed' ? 'bg-red-500' : 'bg-blue-500'
-                        )} 
-                        style={{ width: `${progress.percentage}%` }}
-                    />
-                </div>
-                
-                {progress.status === 'completed' && (
-                     <div className="bg-green-50 text-green-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" /> Success! Attendance updated.
+                {success && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-800">
+                        <div className="flex items-center gap-2 font-semibold">
+                            <CheckCircle2 className="w-5 h-5" />
+                            Upload Successful
+                        </div>
+                        <p className="mt-1 text-sm">Processed {success.processed} records. Success: {success.successCount}, Failed: {success.failCount}.</p>
+                        {success.errors && success.errors.length > 0 && (
+                            <div className="mt-2 p-2 bg-white rounded border border-green-200 max-h-40 overflow-y-auto text-xs text-red-600">
+                                <p className="font-semibold text-slate-700 mb-1">Errors:</p>
+                                {success.errors.map((e: string, i: number) => <div key={i}>{e}</div>)}
+                            </div>
+                        )}
                     </div>
                 )}
-              </div>
+                
+                {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800">
+                        <div className="flex items-center gap-2 font-semibold">
+                            <AlertCircle className="w-5 h-5" />
+                            Upload Failed
+                        </div>
+                        <p className="mt-1 text-sm">{error}</p>
+                    </div>
+                )}
           </div>
-        )}
+      )}
     </div>
   );
 }

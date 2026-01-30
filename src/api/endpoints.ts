@@ -3,7 +3,7 @@
 
 export const BASE_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.VITE_NODE_ENV === "production"
-    ? "https://uni-z-api.vercel.app/api/v1"
+    ? "https://uniz-production-gateway.vercel.app/api/v1"
     : "http://localhost:3000/api/v1"
 );
 
