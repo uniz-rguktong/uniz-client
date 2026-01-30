@@ -11,7 +11,7 @@ import { useStudentData } from '../../hooks/student_info';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { BASE_URL, UPDATE_DETAILS, STUDENT_HISTORY } from '../../api/endpoints';
+import { BASE_URL, UPDATE_DETAILS, STUDENT_HISTORY, REQUEST_OUTING, REQUEST_OUTPASS } from '../../api/endpoints';
 import { motion, AnimatePresence } from 'framer-motion';
 import RequestCard from '../../components/RequestCard';
 import { toast } from 'react-toastify';
@@ -196,15 +196,15 @@ export default function StudentProfilePage() {
         setRequestLoading(true);
         try {
             const token = localStorage.getItem('student_token')?.replace(/^"|"$/g, '');
-            const endpoint = requestType === 'outpass' ? `${BASE_URL}/student/requestoutpass` : `${BASE_URL}/student/requestouting`;
-            const payload: any = { reason: requestForm.reason, userId: user._id };
+            const endpoint = requestType === 'outpass' ? REQUEST_OUTPASS : REQUEST_OUTING;
+            const payload: any = { reason: requestForm.reason };
 
             if (requestType === 'outpass') {
-                payload.from_date = requestForm.from;
-                payload.to_date = requestForm.to;
+                payload.fromDay = requestForm.from;
+                payload.toDay = requestForm.to;
             } else {
-                payload.from_time = requestForm.from;
-                payload.to_time = requestForm.to;
+                payload.fromTime = requestForm.from;
+                payload.toTime = requestForm.to;
             }
 
             const res = await axios.post(endpoint, payload, { headers: { Authorization: `Bearer ${token}` } });

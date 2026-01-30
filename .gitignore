@@ -7,3 +7,5 @@ coverage
 .idea
 .vscode
 # .env is deliberately NOT ignored per user request
+.vercel
+.env*.local

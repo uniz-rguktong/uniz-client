@@ -22,9 +22,9 @@ export default function FacultyDashboard() {
 
     const fetchProfile = async () => {
         try {
-             // Correct endpoint is /faculty/me
-             const res = await fetch(`${BASE_URL}/faculty/me`, {
-                 headers: { Authorization: `Bearer ${JSON.parse(token)}` }
+             // Correct endpoint is /profile/faculty/me
+             const res = await fetch(`${BASE_URL}/profile/faculty/me`, {
+                 headers: { Authorization: `Bearer ${token}` }
              });
              const data = await res.json();
              if (data.success) {

@@ -57,13 +57,13 @@ export default function ApproveComp({ type }: ApproveProps) {
         }
 
         if (type === 'outing') {
-             if (action === 'approve') endpoint = APPROVE_OUTING;
-             else if (action === 'reject') endpoint = REJECT_OUTING;
-             else endpoint = FORWARD_OUTING;
+             if (action === 'approve') endpoint = APPROVE_OUTING(id);
+             else if (action === 'reject') endpoint = REJECT_OUTING(id);
+             else endpoint = FORWARD_OUTING(id);
         } else {
-             if (action === 'approve') endpoint = APPROVE_OUTPASS;
-             else if (action === 'reject') endpoint = REJECT_OUTPASS;
-             else endpoint = FORWARD_OUTPASS;
+             if (action === 'approve') endpoint = APPROVE_OUTPASS(id);
+             else if (action === 'reject') endpoint = REJECT_OUTPASS(id);
+             else endpoint = FORWARD_OUTPASS(id);
         }
 
         setLoadingId(id);
