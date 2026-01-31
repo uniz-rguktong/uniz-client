@@ -27,16 +27,16 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-slate-900 selection:text-white flex flex-col">
-            
+
             {/* Hero Section */}
             <section className="flex-1 flex flex-col justify-center px-4 md:px-6 relative overflow-hidden">
                 <div className="max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center py-20 lg:py-0">
-                    
+
                     {/* Content */}
                     <div className="space-y-8 text-center lg:text-left animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <div className="inline-flex items-center px-3 py-1 rounded-full bg-black border border-black text-white text-[10px] font-black tracking-[0.2em] uppercase">
                             <span className="w-2 h-2 rounded-full bg-white mr-2 animate-pulse"></span>
-                            Campus Operating System v2.0
+                            Campus Operating System v3.0
                         </div>
 
                         <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 leading-[0.9] uppercase">
@@ -45,16 +45,16 @@ export default function Home() {
 
                         <p className="text-lg md:text-xl text-slate-400 max-w-lg mx-auto lg:mx-0 leading-relaxed font-semibold">
                             Next-generation campus management.
-                            <br className="hidden md:inline" /> 
+                            <br className="hidden md:inline" />
                             Unified. Swift. Efficient.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                             <Link to="/student/signin">
-                                 <Button size="lg" className="rounded-none border-4 border-black px-12 py-8 text-lg w-full sm:w-auto font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none translate-y-[-4px] hover:translate-y-0">
+                            <Link to="/student/signin">
+                                <Button size="lg" className="rounded-none border-4 border-black px-12 py-8 text-lg w-full sm:w-auto font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none translate-y-[-4px] hover:translate-y-0">
                                     Launch Hub <ArrowRight className="ml-2 w-6 h-6" />
-                                 </Button>
-                             </Link>
+                                </Button>
+                            </Link>
                         </div>
                     </div>
 
@@ -62,10 +62,10 @@ export default function Home() {
                     <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-200 hidden lg:block">
                         <div className="absolute inset-0 bg-slate-400 rounded-full blur-[120px] opacity-20 transform scale-90 animate-pulse"></div>
                         <div className="relative z-10 p-8 bg-white border-4 border-black shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] rotate-3 hover:rotate-0 transition-transform duration-500">
-                            <img 
-                                src="/pikachu.png" 
-                                alt="UniZ Platform" 
-                                className="w-full max-w-sm mx-auto grayscale hover:grayscale-0 transition-all duration-500" 
+                            <img
+                                src="/pikachu.png"
+                                alt="UniZ Platform"
+                                className="w-full max-w-sm mx-auto grayscale hover:grayscale-0 transition-all duration-500"
                             />
                             <div className="mt-4 border-t-2 border-black pt-4 flex justify-between items-center">
                                 <span className="font-black uppercase text-xs">System Status</span>
@@ -100,21 +100,21 @@ export default function Home() {
             {/* Features Strip */}
             <section className="bg-white py-24 px-6">
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-                     <FeatureCard 
-                        icon={<Clock className="w-8 h-8 text-black"/>}
+                    <FeatureCard
+                        icon={<Clock className="w-8 h-8 text-black" />}
                         title="Real-time Sync"
                         desc="Instant updates on attendance and approvals. No more waiting in lines."
-                     />
-                     <FeatureCard 
-                        icon={<ShieldCheck className="w-8 h-8 text-black"/>}
+                    />
+                    <FeatureCard
+                        icon={<ShieldCheck className="w-8 h-8 text-black" />}
                         title="Secure & Reliable"
                         desc="Institutional-grade security for your data. Encrypted and distributed."
-                     />
-                     <FeatureCard 
-                        icon={<Zap className="w-8 h-8 text-black"/>}
+                    />
+                    <FeatureCard
+                        icon={<Zap className="w-8 h-8 text-black" />}
                         title="Fast Workflow"
                         desc="Optimized for quick academic tasks. Built for speed and precision."
-                     />
+                    />
                 </div>
             </section>
 
