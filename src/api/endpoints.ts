@@ -1,6 +1,7 @@
 
 
 
+// Set this to your Azure VM IP or Domain in .env as VITE_API_URL
 export const BASE_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.VITE_NODE_ENV === "production"
     ? "https://uniz-production-gateway.vercel.app/api/v1"
